@@ -2,8 +2,8 @@
   "name": "zuca-test",
   "vendor": "lojabagaggio",
   "version": "1.0.0-beta.0",
-  "title": "Payment Provider Example",
-  "description": "Reference app for Payment-Provider protocol implementers",
+  "title": "Zuca Test",
+  "description": "Zuca Test",
   "builders": {
     "paymentProvider": "1.x",
     "node": "6.x",
