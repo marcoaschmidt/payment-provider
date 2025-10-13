@@ -34,24 +34,32 @@
       "allowsSplit": "onAuthorize"
     },
     {
-      "name": "ZucaTest",
-      "allowsSplit": "onCapture"
-    },
-    {
-      "name": "PromissoryNote",
-      "allowsSplit": "onAuthorize"
-    },
-    {
-      "name": "Promissória",
-      "allowsSplit": "onAuthorize"
-    },
-    {
       "name": "Discover",
       "allowsSplit": "onCapture"
     },
     {
       "name": "Maestro",
       "allowsSplit": "onCapture"
+    },
+    {
+      "name": "PayPal",
+      "allowsSplit": "onAuthorize"
+    },
+    {
+      "name": "PicPay",
+      "allowsSplit": "onAuthorize"
+    },
+    {
+      "name": "Stripe",
+      "allowsSplit": "onAuthorize"
+    },
+    {
+      "name": "Venda Direta Debito",
+      "allowsSplit": "onAuthorize"
+    },
+    {
+      "name": "Venda Direta Credito",
+      "allowsSplit": "onAuthorize"
     }
   ],
   "customFields": [
