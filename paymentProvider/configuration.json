@@ -38,12 +38,20 @@
       "allowsSplit": "onCapture"
     },
     {
-      "name": "Promissory",
+      "name": "PromissoryNote",
       "allowsSplit": "onAuthorize"
     },
     {
       "name": "Promissória",
       "allowsSplit": "onAuthorize"
+    },
+    {
+      "name": "Discover",
+      "allowsSplit": "onCapture"
+    },
+    {
+      "name": "Maestro",
+      "allowsSplit": "onCapture"
     }
   ],
   "customFields": [
