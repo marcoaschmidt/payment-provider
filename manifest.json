@@ -1,7 +1,7 @@
 {
   "name": "zuca-test",
   "vendor": "lojabagaggio",
-  "version": "1.1.1-beta.0",
+  "version": "1.1.2-beta.0",
   "title": "Zuca Test",
   "description": "Zuca Test",
   "builders": {
