@@ -34,6 +34,10 @@
       "allowsSplit": "onAuthorize"
     },
     {
+      "name": "ZucaTest",
+      "allowsSplit": "onCapture"
+    },
+    {
       "name": "Promissory",
       "allowsSplit": "onAuthorize"
     },
@@ -43,5 +47,27 @@
     }
   ],
   "customFields": [
+    {
+      "name": "Client ID",
+      "type": "text"
+    },
+    {
+      "name": "Secret Token",
+      "type": "password"
+    },
+    {
+      "name": "Currency",
+      "type": "select",
+      "options": [
+        {
+          "text": "BRL",
+          "value": "1"
+        },
+        {
+          "text": "USD",
+          "value": "2"
+        }
+      ]
+    }
   ]
 }
