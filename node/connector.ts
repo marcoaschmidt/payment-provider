@@ -38,39 +38,12 @@ export default class TestSuiteApprover extends PaymentProvider {
   // Refer to https://help.vtex.com/en/tutorial/payment-provider-protocol#4-testing
   // in order to learn about the protocol and make the according changes.
 
-  private readonly APP_NAME = 'zuca-payment-app'
-
-  private patchPaymentAppData(
-    resp: AuthorizationResponse
-  ): AuthorizationResponse {
-    // Only pending/redirect responses have paymentAppData per typings,
-    // but we defensively patch when the field exists.
-    type WithPaymentAppData = {
-      paymentAppData?: { appName?: string; payload?: string } | null
-    }
-
-    const patchable = resp as AuthorizationResponse & WithPaymentAppData
-
-    if ('paymentAppData' in patchable) {
-      const current = patchable.paymentAppData
-
-      patchable.paymentAppData = {
-        ...(current ?? {}),
-        appName: this.APP_NAME,
-      }
-    }
-
-    return patchable as AuthorizationResponse
-  }
-
   private async saveAndRetry(
     req: AuthorizationRequest,
     resp: AuthorizationResponse
   ) {
-    const patched = this.patchPaymentAppData(resp)
-
-    await persistAuthorizationResponse(this.context.clients.vbase, patched)
-    this.callback(req, patched)
+    await persistAuthorizationResponse(this.context.clients.vbase, resp)
+    this.callback(req, resp)
   }
 
   public async authorize(
@@ -83,14 +56,12 @@ export default class TestSuiteApprover extends PaymentProvider {
       )
 
       if (persistedResponse !== undefined && persistedResponse !== null) {
-        return this.patchPaymentAppData(persistedResponse)
+        return persistedResponse
       }
 
-      const initial = executeAuthorization(authorization, response =>
+      return executeAuthorization(authorization, response =>
         this.saveAndRetry(authorization, response)
       )
-
-      return this.patchPaymentAppData(initial)
     }
 
     throw new Error('Not implemented')
