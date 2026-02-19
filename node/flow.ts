@@ -1,5 +1,4 @@
 import {
-  isBankInvoiceAuthorization,
   isCardAuthorization,
   isTokenizedCard,
   AuthorizationRequest,
@@ -17,12 +16,13 @@ type Flow =
   | 'AsyncDenied'
   | 'BankInvoice'
   | 'Redirect'
+  | 'PaymentApp'
 
 export const flows: Record<
   Flow,
   (
     authorization: AuthorizationRequest,
-    retry: (response: AuthorizationResponse) => void
+    callback: (response: AuthorizationResponse) => void
   ) => AuthorizationResponse
 > = {
   Authorize: request =>
@@ -30,14 +30,15 @@ export const flows: Record<
       authorizationId: randomString(),
       nsu: randomString(),
       tid: randomString(),
+      delayToAutoSettle: 1,
     }),
 
   Denied: request => Authorizations.deny(request, { tid: randomString() }),
 
-  Cancel: (request, retry) => flows.Authorize(request, retry),
+  Cancel: (request, callback) => flows.Authorize(request, callback),
 
-  AsyncApproved: (request, retry) => {
-    retry(
+  AsyncApproved: (request, callback) => {
+    callback(
       Authorizations.approve(request, {
         authorizationId: randomString(),
         nsu: randomString(),
@@ -51,8 +52,8 @@ export const flows: Record<
     })
   },
 
-  AsyncDenied: (request, retry) => {
-    retry(Authorizations.deny(request, { tid: randomString() }))
+  AsyncDenied: (request, callback) => {
+    callback(Authorizations.deny(request, { tid: randomString() }))
 
     return Authorizations.pending(request, {
       delayToCancel: 1000,
@@ -60,24 +61,72 @@ export const flows: Record<
     })
   },
 
-  BankInvoice: (request, retry) => {
-    retry(
+  BankInvoice: (request, callback) => {
+    callback(
       Authorizations.approve(request, {
         authorizationId: randomString(),
         nsu: randomString(),
         tid: randomString(),
       })
     )
+    const { paymentId } = request
 
-    return Authorizations.pendingBankInvoice(request, {
+    return {
+      paymentId,
+      authorizationId: '1234',
+      status: 'undefined',
+      acquirer: null,
+      code: null,
+      message: null,
+      paymentAppData: null,
+      identificationNumber: undefined,
+      identificationNumberFormatted: undefined,
+      barCodeImageNumber: undefined,
+      barCodeImageType: undefined,
       delayToCancel: 1000,
-      paymentUrl: randomUrl(),
+      BankIssueInvoiceUrl: 'https://www.google.com.br',
+      paymentUrl: 'https://www.google.com.br',
       tid: randomString(),
-    })
+    }
   },
 
-  Redirect: (request, retry) => {
-    retry(
+  PaymentApp: request => {
+    const {
+      paymentId,
+      inboundRequestsUrl,
+      callbackUrl,
+      transactionId,
+    } = request
+
+    return {
+      paymentId,
+      paymentUrl: null,
+      authorizationId: '1234',
+      status: 'undefined',
+      acquirer: null,
+      code: null,
+      message: null,
+      paymentAppData: {
+        appName: 'lojabagaggioio.zuca-payment-app',
+        payload: JSON.stringify({
+          inboundRequestsUrl,
+          callbackUrl,
+          paymentId,
+          transactionId,
+        }),
+      },
+      identificationNumber: undefined,
+      identificationNumberFormatted: undefined,
+      barCodeImageNumber: undefined,
+      barCodeImageType: undefined,
+      delayToCancel: 600,
+      tid: randomString(),
+      nsu: randomString(),
+    }
+  },
+
+  Redirect: (request, callback) => {
+    callback(
       Authorizations.approve(request, {
         authorizationId: randomString(),
         nsu: randomString(),
@@ -94,26 +143,44 @@ export const flows: Record<
 }
 
 export type CardNumber =
-  | '4444333322221111'
+  | '346716465047888'
   | '4444333322221112'
   | '4222222222222224'
   | '4222222222222225'
+  | '5364561739403228'
   | 'null'
 
 const cardResponses: Record<CardNumber, Flow> = {
-  '4444333322221111': 'Authorize',
+  '346716465047888': 'Authorize',
   '4444333322221112': 'Denied',
   '4222222222222224': 'AsyncApproved',
   '4222222222222225': 'AsyncDenied',
+  '5364561739403228': 'PaymentApp',
   null: 'Redirect',
 }
 
-const findFlow = (request: AuthorizationRequest): Flow => {
+const isBankInvoiceAuthorization = (authorization: AuthorizationRequest) =>
+  ['BankInvoice', 'Boleto Bancário'].includes(authorization.paymentMethod)
+
+const isPaymentAppFlow = (authorization: AuthorizationRequest) =>
+  ['PaymentApp', 'Venda Direta Debito'].includes(authorization.paymentMethod)
+
+const findFlow = (request: AuthorizationRequest, status?: string): Flow => {
+  if (status === 'approved') return 'Authorize'
+
+  if (status === 'denied') return 'Denied'
+
+  if (isPaymentAppFlow(request)) return 'PaymentApp'
+
   if (isBankInvoiceAuthorization(request)) return 'BankInvoice'
 
   if (isCardAuthorization(request)) {
     const { card } = request
-    const cardNumber = isTokenizedCard(card) ? null : card.number
+    const cardNumber = isTokenizedCard(card)
+      ? request.paymentMethod === 'American Express'
+        ? '5364561739403228'
+        : '346716465047888'
+      : card.number
 
     return cardResponses[cardNumber as CardNumber]
   }
@@ -123,9 +190,13 @@ const findFlow = (request: AuthorizationRequest): Flow => {
 
 export const executeAuthorization = (
   request: AuthorizationRequest,
-  retry: (response: AuthorizationResponse) => void
+  callback: (response: AuthorizationResponse) => void,
+  status?: string
 ): AuthorizationResponse => {
-  const flow = findFlow(request)
+  const flow = findFlow(request, status)
 
-  return flows[flow](request, retry)
+  // eslint-disable-next-line no-console
+  console.log(flow)
+
+  return flows[flow](request, callback)
 }
